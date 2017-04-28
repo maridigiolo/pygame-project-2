@@ -82,8 +82,8 @@ class Game:
         self.hero_img = pygame.image.load("../images/hero.png")
         self.monster_img = pygame.image.load("../images/monster.png").convert_alpha()
         #display a message asking if the user wants to play again
-        font = pygame.font.Font(None, 25)
-        self.text = font.render('Hit ENTER to play again!', True, (0, 0, 0))
+        font = pygame.font.Font(None, 30)
+        self.text = font.render('Hit ENTER to play again!', True, (5, 5, 5))
 
     def redraw (self, hero, monster):
         self.screen.blit(self.background, [0,0])
@@ -109,11 +109,11 @@ def wait_for_return ():
 def main():
     width = 512
     height = 480
-    blue_color = (97, 159, 182)
 
     pygame.init()
     screen = pygame.display.set_mode((width, height))
     pygame.display.set_caption('My Game')
+    sound = pygame.mixer.Sound('../sounds/win.wav')
     game = Game(screen)
     clock = pygame.time.Clock()
 
@@ -171,9 +171,9 @@ def main():
         monster_rect = pygame.Rect((monster.pos[0], monster.pos[1], 32, 32))
 
         if hero_rect.colliderect(monster_rect):
+            sound.play()
             #make the monster disapear
             game.redraw(hero, None)
-
             restart = wait_for_return()
             if restart == 'restart':
                 return restart
