@@ -75,6 +75,36 @@ class Monster(Character):
         #Just to show the new position
         # print(self.pos)
 
+class Game:
+    def __init__ (self, screen):
+        self.screen = screen
+        self.background = pygame.image.load("../images/background.png")
+        self.hero_img = pygame.image.load("../images/hero.png")
+        self.monster_img = pygame.image.load("../images/monster.png").convert_alpha()
+        #display a message asking if the user wants to play again
+        font = pygame.font.Font(None, 25)
+        self.text = font.render('Hit ENTER to play again!', True, (0, 0, 0))
+
+    def redraw (self, hero, monster):
+        self.screen.blit(self.background, [0,0])
+        self.screen.blit(self.hero_img, [hero.pos[0], hero.pos[1]])
+        if monster:
+            self.screen.blit(self.monster_img, [monster.pos[0], monster.pos[1]])
+        else:
+            self.screen.blit(self.text, (90, 230))
+
+        # Game display
+        pygame.display.update()
+
+def wait_for_return ():
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return 'quit'
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    return 'restart'
 
 def main():
     width = 512
@@ -84,26 +114,23 @@ def main():
     pygame.init()
     screen = pygame.display.set_mode((width, height))
     pygame.display.set_caption('My Game')
+    game = Game(screen)
     clock = pygame.time.Clock()
-    background = pygame.image.load("../images/background.png")
-    hero_img = pygame.image.load("../images/hero.png")
-    monster_img = pygame.image.load("../images/monster.png").convert_alpha()
-    #display a message asking if the user wants to play again
-    font = pygame.font.Font(None, 25)
-    text = font.render('Hit ENTER to play again!', True, (0, 0, 0))
 
     # Game initialization
     hero = Hero('Hero', 236, 220)
     monster = Monster('Monster', 150, 300 )
-
+    # goblins = []
+    # for i in range(0, 5):
+    #     new_goblin = Goblin()
+    #     goblins.append(new_goblin)
 
     #Using time.time() to wait the next moviment
     time_started = time.time()
-    next_action_time = time_started + 2
+    next_action_time = time_started
 
     stop_game = False
     moving = False
-    draw_monster = True
     while not stop_game:
         # look through user events fired
         for event in pygame.event.get():
@@ -115,9 +142,6 @@ def main():
 
             if event.type == pygame.KEYDOWN:
                 moving = True
-
-                if not draw_monster and event.key == pygame.K_RETURN:
-                    return 'restart'
 
             elif event.type == pygame.KEYUP:
                 moving = False
@@ -148,22 +172,16 @@ def main():
 
         if hero_rect.colliderect(monster_rect):
             #make the monster disapear
-            draw_monster = False
-            # hero.mov(0,0)
-            moving = False
-            screen.blit(text, (90, 230))
-            pygame.display.update()
-            pygame.event.wait()
+            game.redraw(hero, None)
 
+            restart = wait_for_return()
+            if restart == 'restart':
+                return restart
+            else:
+                stop_game = True
 
         # Draw background
-        screen.blit(background, [0,0])
-        screen.blit(hero_img, [hero.pos[0], hero.pos[1]])
-        if draw_monster:
-            screen.blit(monster_img, [monster.pos[0], monster.pos[1]])
-
-        # Game display
-        pygame.display.update()
+        game.redraw(hero, monster)
         clock.tick(60)
 
     pygame.quit()
