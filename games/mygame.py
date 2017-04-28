@@ -88,6 +88,9 @@ def main():
     background = pygame.image.load("../images/background.png")
     hero_img = pygame.image.load("../images/hero.png")
     monster_img = pygame.image.load("../images/monster.png").convert_alpha()
+    #display a message asking if the user wants to play again
+    font = pygame.font.Font(None, 25)
+    text = font.render('Hit ENTER to play again!', True, (0, 0, 0))
 
     # Game initialization
     hero = Hero('Hero', 236, 220)
@@ -100,6 +103,7 @@ def main():
 
     stop_game = False
     moving = False
+    draw_monster = True
     while not stop_game:
         # look through user events fired
         for event in pygame.event.get():
@@ -111,6 +115,10 @@ def main():
 
             if event.type == pygame.KEYDOWN:
                 moving = True
+
+                if not draw_monster and event.key == pygame.K_RETURN:
+                    return 'restart'
+
             elif event.type == pygame.KEYUP:
                 moving = False
 
@@ -133,33 +141,35 @@ def main():
 
 
         #Decteting the collision
+
         #hero_rect position = hero_x, hero_y, hero_width, hero_hight
         hero_rect = pygame.Rect((hero.pos[0], hero.pos[1], 32, 32))
         monster_rect = pygame.Rect((monster.pos[0], monster.pos[1], 32, 32))
-        # print(hero_rect)
-        # print(monster_rect)
+
         if hero_rect.colliderect(monster_rect):
-
-
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_RETURN:
-                    pass
-                else:
-                    stop_game = True
-
+            #make the monster disapear
+            draw_monster = False
+            # hero.mov(0,0)
+            moving = False
+            screen.blit(text, (90, 230))
+            pygame.display.update()
+            pygame.event.wait()
 
 
         # Draw background
-        screen.fill(blue_color)
         screen.blit(background, [0,0])
         screen.blit(hero_img, [hero.pos[0], hero.pos[1]])
-        screen.blit(monster_img, [monster.pos[0], monster.pos[1]])
+        if draw_monster:
+            screen.blit(monster_img, [monster.pos[0], monster.pos[1]])
 
         # Game display
         pygame.display.update()
         clock.tick(60)
 
     pygame.quit()
+    return None
 
 if __name__ == '__main__':
-    main()
+    restart = 'restart'
+    while restart == 'restart':
+        restart = main()
