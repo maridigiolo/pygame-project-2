@@ -40,16 +40,16 @@ class Monster(Character):
         #Changing the direction, and setting the speed
         #for x direction
         if x == 0:
-            x += 40
+            x += 45
         elif x == 1:
-            x -= -40
+            x -= -45
         else:
             x = 0
         #for y direction
         if y == 0:
-            y += 40
+            y += 45
         elif y == 1:
-            y -= -40
+            y -= -45
         else:
             y = 0
 
@@ -75,23 +75,60 @@ class Monster(Character):
         #Just to show the new position
         # print(self.pos)
 
+class Goblin(Character):
+    def mov(self):
+        #Setting random position
+        x = random.randint(20, 480)
+        y = random.randint(20, 400)
+        self.pos[0] += self.speed_x
+        self.pos[1] += self.speed_y
+        self.speed_x = random.randint(0, 1)
+        self.speed_y = random.randint(0, 1)
+
+        #defining the limits to the moviment inside the screen
+        self.pos[0] += x
+        if self.pos[0] > 492:
+            self.pos[0] = 20
+        elif self.pos[0] < 20:
+            self.pos[0] = 492
+
+
+        self.pos[1] += y
+        if self.pos[1] > 460:
+            self.pos[1] = 20
+        elif self.pos[1] < 20:
+            self.pos[1] = 460
+
+
 class Game:
     def __init__ (self, screen):
         self.screen = screen
         self.background = pygame.image.load("../images/background.png")
         self.hero_img = pygame.image.load("../images/hero.png")
         self.monster_img = pygame.image.load("../images/monster.png").convert_alpha()
+        self.goblin_img = pygame.image.load("../images/goblin.png").convert_alpha()
         #display a message asking if the user wants to play again
-        font = pygame.font.Font(None, 30)
-        self.text = font.render('Hit ENTER to play again!', True, (5, 5, 5))
+        font = pygame.font.SysFont('Papyrus', 20, bold = True)
+        self.text = font.render('Hit ENTER to play again!', True, (255, 255, 255))
+        fontw = pygame.font.SysFont('Comic Sans MS', 60, bold = True)
+        self.textw = fontw.render('WIN!', True, (255, 255, 0))
+        fontl = pygame.font.SysFont('Comic Sans MS', 60, bold = True)
+        self.textl = fontl.render('GAME OVER!', True, (255, 0, 0))
 
-    def redraw (self, hero, monster):
+    def redraw (self, hero, monster, goblins):
         self.screen.blit(self.background, [0,0])
-        self.screen.blit(self.hero_img, [hero.pos[0], hero.pos[1]])
+        for g in goblins:
+            self.screen.blit(self.goblin_img, [g.pos[0], g.pos[1]])
+        if hero:
+            self.screen.blit(self.hero_img, [hero.pos[0], hero.pos[1]])
+        else:
+            self.screen.blit(self.textl, (70,180))
+            self.screen.blit(self.text, (250, 390))
         if monster:
             self.screen.blit(self.monster_img, [monster.pos[0], monster.pos[1]])
         else:
-            self.screen.blit(self.text, (90, 230))
+            self.screen.blit(self.textw, (170,180))
+            self.screen.blit(self.text, (250, 390))
 
         # Game display
         pygame.display.update()
@@ -106,6 +143,12 @@ def wait_for_return ():
                 if event.key == pygame.K_RETURN:
                     return 'restart'
 
+def is_collided_goblin(rectH, rectGList):
+    for rectGoblin in rectGList:
+        if rectGoblin.colliderect(rectH):
+            return True
+    return False
+
 def main():
     width = 512
     height = 480
@@ -113,17 +156,20 @@ def main():
     pygame.init()
     screen = pygame.display.set_mode((width, height))
     pygame.display.set_caption('My Game')
-    sound = pygame.mixer.Sound('../sounds/win.wav')
+    winsound = pygame.mixer.Sound('../sounds/win.wav')
+    losesound = pygame.mixer.Sound('../sounds/lose.wav')
     game = Game(screen)
     clock = pygame.time.Clock()
 
     # Game initialization
     hero = Hero('Hero', 236, 220)
     monster = Monster('Monster', 150, 300 )
-    # goblins = []
-    # for i in range(0, 5):
-    #     new_goblin = Goblin()
-    #     goblins.append(new_goblin)
+    goblins = []
+    for i in range(0, 4):
+        a = random.randint(20, 480)
+        b = random.randint(20, 400)
+        new_goblin = Goblin('Goblin', a, b)
+        goblins.append(new_goblin)
 
     #Using time.time() to wait the next moviment
     time_started = time.time()
@@ -160,20 +206,33 @@ def main():
         # Game logic
         if next_action_time <= (time.time()):
             monster.mov()
+            for g in goblins:
+                g.mov()
             time_started = time.time()
-            next_action_time = time_started + 0.4
+            next_action_time = time_started + 0.3
 
 
-        #Decteting the collision
-
-        #hero_rect position = hero_x, hero_y, hero_width, hero_hight
+        #Decteting the collision (hero_rect position = hero_x, hero_y, hero_width, hero_hight)
+        goblins_rect = []
         hero_rect = pygame.Rect((hero.pos[0], hero.pos[1], 32, 32))
         monster_rect = pygame.Rect((monster.pos[0], monster.pos[1], 32, 32))
+        for g in goblins:
+            goblins_rect.append(pygame.Rect((g.pos[0], g.pos[1], 32, 32)))
 
         if hero_rect.colliderect(monster_rect):
-            sound.play()
+            winsound.play()
             #make the monster disapear
-            game.redraw(hero, None)
+            game.redraw(hero, None, goblins)
+            restart = wait_for_return()
+            if restart == 'restart':
+                return restart
+            else:
+                stop_game = True
+
+        elif is_collided_goblin(hero_rect, goblins_rect):
+            losesound.play()
+            #make the hero disapear
+            game.redraw(None, monster, goblins)
             restart = wait_for_return()
             if restart == 'restart':
                 return restart
@@ -181,7 +240,7 @@ def main():
                 stop_game = True
 
         # Draw background
-        game.redraw(hero, monster)
+        game.redraw(hero, monster, goblins)
         clock.tick(60)
 
     pygame.quit()
